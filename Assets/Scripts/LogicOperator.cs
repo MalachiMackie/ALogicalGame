@@ -1,16 +1,27 @@
 ﻿using System;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public abstract class LogicOperator : MonoBehaviour
 {
     private bool output;
 
-    private bool _output
+    protected bool _output
     {
         get => output;
-        set {
+        set
+        {
             output = value;
-            OutputUpdated.Invoke(this, output);
+            OutputUpdated?.Invoke(this, output);
+            if (output)
+            {
+                GetComponent<Renderer>().material.color = new Color(0, 1, 0);
+            }
+            else
+            {
+                GetComponent<Renderer>().material.color = new Color(1, 0, 0);
+            }
+            
         }
     }
 
@@ -38,34 +49,34 @@ public abstract class LogicOperator : MonoBehaviour
         }
     }
 
-    private bool inputValue1;
+    private bool _inputValue1;
 
-    private bool _inputValue1
+    public bool InputValue1
     {
-        get => inputValue1;
+        get => _inputValue1;
         set
         {
-            inputValue1 = value;
-            _output = CalculateOutput(_inputValue1, _inputValue2);
+            _inputValue1 = value;
+            CalculateOutput(InputValue1, InputValue2);
         }
     }
 
-    private bool inputValue2;
+    private bool _inputValue2;
 
-    private bool _inputValue2
+    public bool InputValue2
     {
-        get => inputValue2;
+        get => _inputValue2;
         set
         {
-            inputValue2 = value;
-            _output = CalculateOutput(_inputValue1, _inputValue2);
+            _inputValue2 = value;
+            CalculateOutput(InputValue1, InputValue2);
         }
     }
 
     // Start is called before the first frame update
     void Start()
     {
-
+        
     }
 
     void Update()
@@ -75,17 +86,19 @@ public abstract class LogicOperator : MonoBehaviour
 
     public bool GetOutput() => _output;
 
-    protected abstract bool CalculateOutput(bool input1, bool input2);
+    protected abstract void CalculateOutput(bool input1, bool input2);
+
+    protected abstract Task CalculateOutputAsync(bool input1, bool input2);
 
     public event EventHandler<bool> OutputUpdated;
 
     private void Input1Updated(object sender, bool e)
     {
-        _inputValue1 = e;
+        InputValue1 = e;
     }
 
     private void Input2Updated(object sender, bool e)
     {
-        _inputValue2 = e;
+        InputValue2 = e;
     }
 }
