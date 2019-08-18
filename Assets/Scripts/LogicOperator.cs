@@ -1,10 +1,13 @@
-﻿using System;
+﻿using Assets.Scripts;
+using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
 public abstract class LogicOperator : MonoBehaviour
 {
     private bool output;
+
+    private Renderer _renderer;
 
     protected bool _output
     {
@@ -13,39 +16,7 @@ public abstract class LogicOperator : MonoBehaviour
         {
             output = value;
             OutputUpdated?.Invoke(this, output);
-            if (output)
-            {
-                GetComponent<Renderer>().material.color = new Color(0, 1, 0);
-            }
-            else
-            {
-                GetComponent<Renderer>().material.color = new Color(1, 0, 0);
-            }
-            
-        }
-    }
-
-    private LogicOperator _inputOperator1;
-
-    public LogicOperator InputOperator1
-    {
-        get => _inputOperator1;
-        set
-        {
-            _inputOperator1 = value;
-            _inputOperator1.OutputUpdated += Input1Updated;
-        }
-    }
-
-    private LogicOperator _inputOperator2;
-
-    public LogicOperator InputOperator2
-    {
-        get => _inputOperator2;
-        set
-        {
-            _inputOperator2 = value;
-            _inputOperator2.OutputUpdated += Input2Updated;
+            SetColourFromOutput();
         }
     }
 
@@ -57,7 +28,8 @@ public abstract class LogicOperator : MonoBehaviour
         set
         {
             _inputValue1 = value;
-            CalculateOutput(InputValue1, InputValue2);
+            CalculateOutputAsync(InputValue1, InputValue2);
+            Debug.Log($"Input 1 set to {value}");
         }
     }
 
@@ -69,14 +41,15 @@ public abstract class LogicOperator : MonoBehaviour
         set
         {
             _inputValue2 = value;
-            CalculateOutput(InputValue1, InputValue2);
+            CalculateOutputAsync(InputValue1, InputValue2);
+            Debug.Log($"Input 2 set to {value}");
         }
     }
 
-    // Start is called before the first frame update
-    void Start()
+    protected virtual void Start()
     {
-        
+        _renderer = GetComponent<Renderer>();
+        SetColourFromOutput();
     }
 
     void Update()
@@ -86,19 +59,37 @@ public abstract class LogicOperator : MonoBehaviour
 
     public bool GetOutput() => _output;
 
-    protected abstract void CalculateOutput(bool input1, bool input2);
-
     protected abstract Task CalculateOutputAsync(bool input1, bool input2);
 
     public event EventHandler<bool> OutputUpdated;
 
-    private void Input1Updated(object sender, bool e)
+    private void SetColourFromOutput()
     {
-        InputValue1 = e;
+        if (_output)
+        {
+            _renderer.material.color = Constants.LogicGateOnColour;
+        }
+        else
+        {
+            _renderer.material.color = Constants.LogicGateOffColour;
+        }
     }
 
-    private void Input2Updated(object sender, bool e)
+    public void SetInput1(object sender, bool input)
     {
-        InputValue2 = e;
+        if (sender is Wire)
+        {
+
+        }
+        InputValue1 = input;
+    }
+
+    public void SetInput2(object sender, bool input)
+    {
+        if (sender is Wire)
+        {
+            //check for input position
+        }
+        InputValue2 = input;
     }
 }

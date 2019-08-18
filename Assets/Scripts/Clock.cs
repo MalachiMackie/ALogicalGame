@@ -1,38 +1,56 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using Assets.Scripts;
+using System;
+using UnityEngine;
 
-public class Clock : LogicOperator
+public class Clock : LogicOutput
 {
-    public float Period = 1;
+    [SerializeField]
+    private float Period = 1;
+
+    private Renderer _renderer;
 
     private bool waiting;
 
-    protected async override Task CalculateOutputAsync(bool input1, bool input2)
+    private bool _output;
+
+    public override bool Output
+    {
+        get => _output;
+        protected set
+        {
+            if (value)
+            {
+                _renderer.material.color = Constants.LogicGateOnColour;
+            }
+            else
+            {
+                _renderer.material.color = Constants.LogicGateOffColour;
+            }
+            _output = value;
+
+            OutputUpdated?.Invoke(this, _output);
+        }
+    }
+
+    public override event EventHandler<bool> OutputUpdated;
+
+    public override void SetOutput()
     {
         waiting = true;
-        await Task.Delay(TimeSpan.FromSeconds(Period / 2));
-        print(DateTime.Now);
-        waiting = false;
-        _output = !_output;
+        StartCoroutine(Utils.DoAfterSeconds(Period / 2, () => { waiting = false; Output = !Output; }));
     }
 
-    protected override void CalculateOutput(bool input1, bool input2)
+    private void Start()
     {
-        throw new InvalidOperationException("Clock does not have any outputs");
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
+        _renderer = GetComponent<Renderer>();
     }
 
     // Update is called once per frame
-    async void Update()
+    private void Update()
     {
         if (!waiting)
         {
-            await CalculateOutputAsync(InputValue1, InputValue2);
+            SetOutput();
         }
     }
 }
