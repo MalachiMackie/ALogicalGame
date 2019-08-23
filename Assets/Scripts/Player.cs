@@ -1,72 +1,36 @@
-﻿using UnityEngine;
+﻿using Assets.Scripts;
+using UnityEngine;
 
-public class Player : MonoBehaviour
+public class Player : MonoBehaviour, INeedGameManger
 {
-    private Rigidbody _rigidbody;
+    public GameManager GameManager { get; set; }
 
     [SerializeField]
     private float _rotateSpeed;
+    public float RotateSpeed { get => _rotateSpeed; }
 
     [SerializeField]
     private float _moveForce;
+    public float MoveForce { get => _moveForce; }
 
     [SerializeField]
     private float _maxSpeed;
+    public float MaxSpeed { get => _maxSpeed; }
 
     // Start is called before the first frame update
     void Start()
     {
-        _rigidbody = GetComponent<Rigidbody>();
+        GameManager = FindObjectOfType<GameManager>();
     }
 
     // Update is called once per frame
     void Update()
     {
-
+        
     }
 
     void FixedUpdate()
     {
-        var moveInput = new Vector3();
-        if (Input.GetKey(KeyCode.W))
-        {
-            moveInput += new Vector3(0, 0, 1);
-        }
-
-        if (Input.GetKey(KeyCode.S))
-        {
-            moveInput += new Vector3(0, 0, -1);
-        }
-
-        if (Input.GetKey(KeyCode.A))
-        {
-            moveInput += new Vector3(-1, 0, 0);
-        }
-
-        if (Input.GetKey(KeyCode.D))
-        {
-            moveInput += new Vector3(1, 0, 0);
-        }
-
-        int rotateInput = 0;
-
-        if (Input.GetKey(KeyCode.Q))
-        {
-            rotateInput--;
-        }
-        if (Input.GetKey(KeyCode.E))
-        {
-            rotateInput++;
-        }
-
-        transform.Rotate(0, rotateInput * _rotateSpeed, 0);
-
-        moveInput *= _moveForce;
-
-        if (_rigidbody.velocity.magnitude < _maxSpeed)
-        {
-            _rigidbody.AddRelativeForce(moveInput);
-        }
-
+        
     }
 }
