@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class Switch : LogicOutput
+    public class Switch : MonoBehaviour, IHaveOutput
     {
         [SerializeField]
         private bool SwitchOn;
@@ -12,10 +12,19 @@ namespace Assets.Scripts
 
         private Renderer _renderer;
 
-        public override bool Output
+        [SerializeField]
+        private LogicFace _outputFace;
+
+        public LogicFace OutputFace
+        {
+            get => _outputFace;
+            private set => _outputFace = value;
+        }
+
+        public bool Output
         {
             get => _output;
-            protected set
+            private set
             {
                 _output = value;
                 if (value)
@@ -30,26 +39,27 @@ namespace Assets.Scripts
             }
         }
 
-        public override void SetOutput()
+        private void SetOutput()
         {
             Output = SwitchOn;
         }
 
-        public override event EventHandler<bool> OutputUpdated;
+        public event EventHandler<bool> OutputUpdated;
 
-        protected override void Start()
+        public void Start()
         {
             _renderer = GetComponent<Renderer>();
             SetOutput();
         }
 
-        protected override void Update()
+        public void Update()
         {
-            if (Input.GetKeyDown(KeyCode.O))
-            {
-                SwitchOn = !SwitchOn;
-                SetOutput();
-            }
+
+        }
+
+        public void SetOutputFace(LogicFace outputFace)
+        {
+            _outputFace = outputFace;
         }
     }
 }

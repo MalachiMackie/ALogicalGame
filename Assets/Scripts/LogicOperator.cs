@@ -3,48 +3,61 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public abstract class LogicOperator : MonoBehaviour
+public abstract class LogicOperator : MonoBehaviour, IHaveInput, IHaveOutput
 {
-    private bool output;
+    private bool _output;
 
     private Renderer _renderer;
 
-    protected bool _output
+    public bool Output
     {
-        get => output;
-        set
+        get => _output;
+        protected set
         {
-            output = value;
-            OutputUpdated?.Invoke(this, output);
+            _output = value;
+            OutputUpdated?.Invoke(this, _output);
             SetColourFromOutput();
         }
     }
 
-    private bool _inputValue1;
+    private bool _primaryInputValue;
 
-    public bool InputValue1
+    public bool PrimanyInputValue
     {
-        get => _inputValue1;
+        get => _primaryInputValue;
         set
         {
-            _inputValue1 = value;
-            CalculateOutputAsync(InputValue1, InputValue2);
-            Debug.Log($"Input 1 set to {value}");
+            _primaryInputValue = value;
+            CalculateOutputAsync(PrimanyInputValue, SecondaryInputValue);
         }
     }
 
-    private bool _inputValue2;
+    private bool _secondaryInputValue;
 
-    public bool InputValue2
+    public bool SecondaryInputValue
     {
-        get => _inputValue2;
+        get => _secondaryInputValue;
         set
         {
-            _inputValue2 = value;
-            CalculateOutputAsync(InputValue1, InputValue2);
-            Debug.Log($"Input 2 set to {value}");
+            _secondaryInputValue = value;
+            CalculateOutputAsync(PrimanyInputValue, SecondaryInputValue);
         }
     }
+
+    [SerializeField]
+    private LogicFace _primaryInputFace;
+
+    public LogicFace PrimaryInputFace => _primaryInputFace;
+
+    [SerializeField]
+    private LogicFace _secondaryInputFace;
+
+    public LogicFace SecondaryInputFace => _secondaryInputFace;
+
+    [SerializeField]
+    private LogicFace _outputFace;
+
+    public LogicFace OutputFace => _outputFace;
 
     protected virtual void Start()
     {
@@ -57,7 +70,7 @@ public abstract class LogicOperator : MonoBehaviour
 
     }
 
-    public bool GetOutput() => _output;
+    public bool GetOutput() => Output;
 
     protected abstract Task CalculateOutputAsync(bool input1, bool input2);
 
@@ -65,7 +78,7 @@ public abstract class LogicOperator : MonoBehaviour
 
     private void SetColourFromOutput()
     {
-        if (_output)
+        if (Output)
         {
             _renderer.material.color = Constants.LogicGateOnColour;
         }
@@ -75,21 +88,15 @@ public abstract class LogicOperator : MonoBehaviour
         }
     }
 
-    public void SetInput1(object sender, bool input)
+    public void SetInput(bool input, LogicFace sender)
     {
-        if (sender is Wire)
+        if(sender == PrimaryInputFace)
         {
-
+            PrimanyInputValue = input;
         }
-        InputValue1 = input;
-    }
-
-    public void SetInput2(object sender, bool input)
-    {
-        if (sender is Wire)
+        else if(sender == SecondaryInputFace)
         {
-            //check for input position
+            SecondaryInputValue = input;
         }
-        InputValue2 = input;
     }
 }
