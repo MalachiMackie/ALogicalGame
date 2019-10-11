@@ -2,7 +2,7 @@
 using System;
 using UnityEngine;
 
-public class Clock : LogicOutput
+public class Clock : MonoBehaviour, IHaveOutput
 {
     [SerializeField]
     private float Period = 1;
@@ -13,10 +13,10 @@ public class Clock : LogicOutput
 
     private bool _output;
 
-    public override bool Output
+    public bool Output
     {
         get => _output;
-        protected set
+        private set
         {
             if (value)
             {
@@ -32,9 +32,14 @@ public class Clock : LogicOutput
         }
     }
 
-    public override event EventHandler<bool> OutputUpdated;
+    [SerializeField]
+    private LogicFace _outputFace;
 
-    public override void SetOutput()
+    public LogicFace OutputFace => _outputFace;
+
+    public event EventHandler<bool> OutputUpdated;
+
+    public void SetOutput()
     {
         waiting = true;
         StartCoroutine(Utils.DoAfterSeconds(Period / 2, () => { waiting = false; Output = !Output; }));
@@ -45,7 +50,6 @@ public class Clock : LogicOutput
         _renderer = GetComponent<Renderer>();
     }
 
-    // Update is called once per frame
     private void Update()
     {
         if (!waiting)

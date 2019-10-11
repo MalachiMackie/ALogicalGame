@@ -40,12 +40,12 @@ namespace Assets.Scripts
         private Vector3 GetMovementInput()
         {
             var moveInput = new Vector3();
-            if (Input.GetKey(KeyCode.W))
+            if (Input.GetKey(KeyCode.Comma))
             {
                 moveInput += new Vector3(0, 0, 1);
             }
 
-            if (Input.GetKey(KeyCode.S))
+            if (Input.GetKey(KeyCode.O))
             {
                 moveInput += new Vector3(0, 0, -1);
             }
@@ -55,7 +55,7 @@ namespace Assets.Scripts
                 moveInput += new Vector3(-1, 0, 0);
             }
 
-            if (Input.GetKey(KeyCode.D))
+            if (Input.GetKey(KeyCode.E))
             {
                 moveInput += new Vector3(1, 0, 0);
             }
