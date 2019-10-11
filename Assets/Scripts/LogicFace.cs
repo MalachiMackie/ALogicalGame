@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class LogicFace : MonoBehaviour, ICanBeLookedAt
+    public class LogicFace : Face
     {
         [SerializeField]
         private LogicConnectorMode _mode;
@@ -19,22 +19,13 @@ namespace Assets.Scripts
             private set => _position = value;
         }
 
-        private MeshRenderer MeshRenderer { get; set; }
-
         public IHaveInput HaveInput { get; private set; }
 
         public IHaveOutput HaveOutput { get; private set; }
 
-        private bool _lookedAt;
-
-        [SerializeField]
-        private Material _lookingAtMat;
-
-        [SerializeField]
-        private Material _notLookingAtMat;
-
-        public void Start()
+        protected override void Start()
         {
+            base.Start();
             if(Mode == LogicConnectorMode.Input)
             {
                 var inputParent = GetComponentInParent<IHaveInput>();
@@ -45,23 +36,6 @@ namespace Assets.Scripts
                 var outputParent = GetComponentInParent<IHaveOutput>();
                 HaveOutput = outputParent;
             }
-
-            MeshRenderer = GetComponent<MeshRenderer>();
-        }
-
-        public void StartLookingAt()
-        {
-            if (!_lookedAt)
-            {
-                _lookedAt = true;
-                MeshRenderer.material = _lookingAtMat;
-            }
-        }
-
-        public void StopLookingAt()
-        {
-            _lookedAt = false;
-            MeshRenderer.material = _notLookingAtMat;
         }
 
         public void ConnectTo(LogicFace otherFace)

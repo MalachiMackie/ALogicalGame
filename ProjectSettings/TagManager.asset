@@ -6,6 +6,7 @@ TagManager:
   tags:
   - LogicFace
   - CanLookAt
+  - Face
   layers:
   - Default
   - TransparentFX
