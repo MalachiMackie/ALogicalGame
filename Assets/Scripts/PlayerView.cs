@@ -9,9 +9,9 @@ namespace Assets.Scripts
 
         private Collider _collider;
 
-        private LogicFace _selectedFace;
+        private Face _selectedFace;
 
-        private ICanBeLookedAt _lookedAt;
+        private Face _lookedAtFace;
 
         public void Start()
         {
@@ -25,36 +25,34 @@ namespace Assets.Scripts
             Physics.Raycast(UnityEngine.Camera.main.transform.position, UnityEngine.Camera.main.transform.forward, out var raycastHit, 50);
 
             //Try look at object
-            if(raycastHit.collider?.gameObject != null && raycastHit.collider?.gameObject.tag == "CanLookAt")
+            if(raycastHit.collider?.gameObject != null && raycastHit.collider?.gameObject.tag == "Face")
             {
-                var lookedAt = raycastHit.collider.gameObject.GetComponentInParent<ICanBeLookedAt>();
-                if(lookedAt != _lookedAt)
+                var lookedAtFace = raycastHit.collider.gameObject.GetComponentInParent<Face>();
+                if(lookedAtFace != _lookedAtFace && lookedAtFace.CanLookAt)
                 {
-                    _lookedAt?.StopLookingAt();
-                    _lookedAt = lookedAt;
-                    _lookedAt.StartLookingAt();
+                    _lookedAtFace?.StopLookingAt();
+                    _lookedAtFace = lookedAtFace;
+                    _lookedAtFace.StartLookingAt();
                 }
             }
-            else if(_lookedAt != null)
+            else if(_lookedAtFace != null)
             {
-                _lookedAt.StopLookingAt();
-                _lookedAt = null;
+                _lookedAtFace.StopLookingAt();
+                _lookedAtFace = null;
             }
 
-            //If looked at object is a logic face
-            if(_lookedAt is LogicFace lookedAtFace)
+            if(Input.GetMouseButtonDown(0))
             {
-                if(Input.GetMouseButtonDown(0))
-                {
-                    _selectedFace = lookedAtFace;
-                }
+                _selectedFace = _lookedAtFace;
+            }
 
-                if(Input.GetMouseButtonUp(0)
-                    && _selectedFace != lookedAtFace
-                    && lookedAtFace.Mode != _selectedFace.Mode)
-                {
-                    ConnectFaces(_selectedFace, lookedAtFace);
-                }
+            if(Input.GetMouseButtonUp(0)
+                && _selectedFace is LogicFace selectedLogicFace
+                && _lookedAtFace is LogicFace lookedAtLogicFace
+                && selectedLogicFace != lookedAtLogicFace
+                && selectedLogicFace.Mode != lookedAtLogicFace.Mode)
+            {
+                ConnectFaces(selectedLogicFace, lookedAtLogicFace);
             }
 
             if(Input.GetMouseButtonUp(0) && _selectedFace != null)
