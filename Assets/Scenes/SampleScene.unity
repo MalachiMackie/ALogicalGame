@@ -1457,7 +1457,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Period: 1
   _outputFace: {fileID: 773761082}
-  _gridPos: {x: 0, y: 0, z: 0}
+  _gridPos: {x: 7, y: 0, z: 9}
 --- !u!65 &1591169717
 BoxCollider:
   m_ObjectHideFlags: 0
