@@ -2,7 +2,7 @@
 using System;
 using UnityEngine;
 
-public class Clock : MonoBehaviour, IHaveOutput
+public class Clock : MonoBehaviour, IHaveOutput, ICanBePlaced
 {
     [SerializeField]
     private float Period = 1;
@@ -36,6 +36,15 @@ public class Clock : MonoBehaviour, IHaveOutput
     private LogicFace _outputFace;
 
     public LogicFace OutputFace => _outputFace;
+
+    [SerializeField]
+    private Vector3Int _gridPos;
+
+    public Vector3Int GridPos
+    {
+        get => _gridPos;
+        set => _gridPos = value;
+    }
 
     public event EventHandler<bool> OutputUpdated;
 
