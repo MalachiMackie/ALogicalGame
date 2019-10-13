@@ -21,7 +21,10 @@ namespace Assets.Scripts
             {
                 needGameManager.GameManager = this;
             }
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Confined;
             //Show the level
+            
         }
     }
 }
