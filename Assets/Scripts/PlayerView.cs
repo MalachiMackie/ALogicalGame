@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -9,9 +10,12 @@ namespace Assets.Scripts
 
         private Collider _collider;
 
-        private Face _selectedFace;
-
         private Face _lookedAtFace;
+
+        private List<Face> _highlightedFaces;
+
+        [SerializeField]
+        private GameObject _wireTemplate;
 
         public void Start()
         {
@@ -19,7 +23,7 @@ namespace Assets.Scripts
             _cameraTransform = FindObjectOfType<Camera>().transform;
         }
 
-        public void Update()
+        public void FixedUpdate()
         {
             Debug.DrawRay(UnityEngine.Camera.main.transform.position, UnityEngine.Camera.main.transform.forward * 5, Color.red, 0.1f);
             Physics.Raycast(UnityEngine.Camera.main.transform.position, UnityEngine.Camera.main.transform.forward, out var raycastHit, 50);
@@ -30,8 +34,34 @@ namespace Assets.Scripts
                 var lookedAtFace = raycastHit.collider.gameObject.GetComponentInParent<Face>();
                 if(lookedAtFace != _lookedAtFace && lookedAtFace.CanLookAt)
                 {
-                    _lookedAtFace?.StopLookingAt();
+                    if (_highlightedFaces != null)
+                    {
+                        if (_highlightedFaces.Contains(lookedAtFace))
+                        {
+                            var faceIndex = _highlightedFaces.IndexOf(lookedAtFace);
+
+                            for(int i = _highlightedFaces.Count - 1; i > faceIndex; i--)
+                            {
+                                _highlightedFaces[i].StopLookingAt();
+                                _highlightedFaces.RemoveAt(i);
+                            }
+                        }
+                        else if(!TryHighlightFace(lookedAtFace))
+                        {
+                            foreach (Face face in _highlightedFaces)
+                            {
+                                face.StopLookingAt();
+                            }
+                            _highlightedFaces = null;
+                        }
+                    }
+                    else
+                    {
+                        _lookedAtFace?.StopLookingAt();
+                    }
                     _lookedAtFace = lookedAtFace;
+
+                    
                     _lookedAtFace.StartLookingAt();
                 }
             }
@@ -39,36 +69,96 @@ namespace Assets.Scripts
             {
                 _lookedAtFace.StopLookingAt();
                 _lookedAtFace = null;
+                if(_highlightedFaces != null)
+                {
+                    foreach (Face face in _highlightedFaces)
+                    {
+                        face.StopLookingAt();
+                    }
+                    _highlightedFaces = null;
+                }
             }
 
             if(Input.GetMouseButtonDown(0))
             {
-                _selectedFace = _lookedAtFace;
+                if(_lookedAtFace is LogicFace logicFace)
+                {
+                    _highlightedFaces = new List<Face>()
+                    {
+                        _lookedAtFace
+                    };
+                }
             }
 
-            if(Input.GetMouseButtonUp(0)
-                && _selectedFace is LogicFace selectedLogicFace
-                && _lookedAtFace is LogicFace lookedAtLogicFace
-                && selectedLogicFace != lookedAtLogicFace
-                && selectedLogicFace.Mode != lookedAtLogicFace.Mode)
+            if (Input.GetMouseButtonUp(0))
             {
-                ConnectFaces(selectedLogicFace, lookedAtLogicFace);
-            }
+                if(_highlightedFaces?[0] is LogicFace firstLogicFace
+                    && _lookedAtFace is LogicFace endLogicFace
+                    && firstLogicFace != endLogicFace
+                    && firstLogicFace.Mode != endLogicFace.Mode)
+                {
+                    //create wire with _highlightedFaces
+                    CreateWire(_highlightedFaces);
+                }
 
-            if(Input.GetMouseButtonUp(0) && _selectedFace != null)
-            {
-                _selectedFace = null;
+                if(_highlightedFaces != null)
+                {
+                    foreach (Face face in _highlightedFaces)
+                    {
+                        face.StopLookingAt();
+                    }
+                    _highlightedFaces = null;
+                }
             }
         }
 
-        private void ConnectFaces(LogicFace firstFace, LogicFace secondFace)
+        private bool TryHighlightFace(Face face)
         {
-            if (firstFace.Mode == secondFace.Mode)
+            var lastFace = _highlightedFaces[_highlightedFaces.Count - 1];
+            
+            if(face is FloorFace firstFloorFace && lastFace is FloorFace lastFloorFace)
             {
-                Debug.LogError("Cannot connect two faces of the same mode");
-                throw new InvalidOperationException("Cannot connect two faces of the same mode");
+                var xDif = Math.Abs(firstFloorFace.FloorPosition.x - lastFloorFace.FloorPosition.x);
+                var zDif = Math.Abs(firstFloorFace.FloorPosition.z - lastFloorFace.FloorPosition.z);
+                if (xDif == 1 ^ zDif == 1)
+                {
+                    _highlightedFaces.Add(face);
+                    return true;
+                }
+                else if(xDif == 1 && zDif == 1)
+                {
+                    var gameManager = GetComponent<Player>().GameManager;
+                    var newFace = gameManager.GetFloorFaceAtPosition(firstFloorFace.FloorPosition.x - Math.Sign(lastFloorFace.FloorPosition.x), firstFloorFace.FloorPosition.z);
+                    if(newFace == null)
+                    {
+                        newFace = gameManager.GetFloorFaceAtPosition(firstFloorFace.FloorPosition.x, firstFloorFace.FloorPosition.z - Math.Sign(lastFloorFace.FloorPosition.z));
+                    }
+
+                    if(newFace == null)
+                    {
+                        return false;
+                    }
+                    newFace.StartLookingAt();
+                    _highlightedFaces.Add(newFace);
+                    _highlightedFaces.Add(face);
+                    Debug.Log($"Found connecting face at {newFace.FloorPosition}");
+                    return true;
+                }
             }
-            firstFace.ConnectTo(secondFace);
+            else
+            {
+                _highlightedFaces.Add(face);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void CreateWire(List<Face> path)
+        {
+            var wireObj = Instantiate(_wireTemplate);
+            var wire = wireObj.GetComponent<Wire>();
+            wire.Init(path);
         }
     }
 }

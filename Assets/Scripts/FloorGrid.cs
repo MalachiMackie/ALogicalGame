@@ -79,6 +79,12 @@ namespace Assets.Scripts
 
         }
 
-        public static Vector3 GetFloorTransformPos(Vector3 position) => new Vector3(position.x - (GridX / 2), position.y + 0.5f, position.z - (GridZ / 2));
+        public FloorFace GetFloorFaceAtPosition(int x, int z)
+        {
+            _floorDictionary.TryGetValue(new Vector3Int(x, 0, z), out var face);
+            return face;
+        }
+
+        //public static Vector3 GetFloorTransformPos(Vector3 position) => new Vector3(position.x - (GridX / 2), position.y + 0.5f, position.z - (GridZ / 2));
     }
 }
