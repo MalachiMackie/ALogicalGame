@@ -1,13 +1,16 @@
 ﻿using Assets.Scripts;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Wire : MonoBehaviour
 {
-    public void Init(List<Face> path)
+    public void Init(IEnumerable<Face> path)
     {
-        if(path[0] is LogicFace firstFace
-            && path[path.Count - 1] is LogicFace lastFace
+        var pathList = path.ToList();
+
+        if(pathList[0] is LogicFace firstFace
+            && pathList[pathList.Count() - 1] is LogicFace lastFace
             && firstFace.Mode != lastFace.Mode
             && firstFace != lastFace)
         {

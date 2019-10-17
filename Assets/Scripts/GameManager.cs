@@ -11,9 +11,19 @@ namespace Assets.Scripts
 
         private FloorGrid _floorGrid;
 
+        public static bool CanMove = true;
+
         public void Start()
         {
             InitLevel();
+        }
+
+        public void Update()
+        {
+            if(Input.GetKeyDown(KeyCode.Escape))
+            {
+                CanMove = !CanMove;
+            }
         }
 
         private void InitLevel()

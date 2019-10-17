@@ -2,7 +2,7 @@
 using Assets.Scripts.Settings;
 using UnityEngine;
 
-public class Camera : MonoBehaviour, INeedGameManger
+public class CameraMovement : MonoBehaviour, INeedGameManger
 {
     [SerializeField]
     private Transform _player;
@@ -37,7 +37,11 @@ public class Camera : MonoBehaviour, INeedGameManger
             transform.rotation = Quaternion.Euler(transform.eulerAngles.x, _player.eulerAngles.y, _player.eulerAngles.z);
             var xRotation = Input.GetAxis(Constants.VerticalLookAxis) * 0.1f;
             xRotation = Settings.FirstPersonInvertCamera ? xRotation * -1 : xRotation;
-            transform.Rotate(xRotation, 0, 0);
+
+            if(GameManager.CanMove)
+            {
+                transform.Rotate(xRotation, 0, 0);
+            }
         };
     }
 }
