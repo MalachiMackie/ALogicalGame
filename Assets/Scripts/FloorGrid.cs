@@ -27,22 +27,22 @@ namespace Assets.Scripts
 
         public void Start()
         {
-            if(_floorParent != null)
+            if (_floorParent != null)
             {
                 var gridX = (int)_floorParent.transform.localScale.x;
                 var gridZ = (int)_floorParent.transform.localScale.z;
-                if(gridX % 2 == 0 || gridZ % 2 == 0) throw new InvalidOperationException("Cannot set parent floor as the scale's are even, they must be odd");
+                if (gridX % 2 == 0 || gridZ % 2 == 0) throw new InvalidOperationException("Cannot set parent floor as the scale's are even, they must be odd");
                 _gridX = gridX;
                 _gridZ = gridZ;
                 Debug.Log($"Floor Parent set, Changing Floor grid X to {_gridZ} and Floor Grid Z to {_gridX}");
             }
 
-            if(_gridX <= 0)
+            if (_gridX <= 0)
             {
                 throw new InvalidOperationException("Floor Grid X must be positive");
             }
 
-            if(_gridZ <= 0)
+            if (_gridZ <= 0)
             {
                 throw new InvalidOperationException("Floor Grid Z must be positive");
             }
@@ -53,9 +53,9 @@ namespace Assets.Scripts
             var xSubtractor = GridX / 2;
             var ZSubtractor = GridZ / 2;
 
-            for(int x = 0; x < GridX; x++)
+            for (int x = 0; x < GridX; x++)
             {
-                for(int z = 0; z < GridZ; z++)
+                for (int z = 0; z < GridZ; z++)
                 {
                     var floorFaceObj = Instantiate(_floorFaceTemplate);
                     var floorFace = floorFaceObj.GetComponent<FloorFace>();
@@ -63,6 +63,30 @@ namespace Assets.Scripts
                     floorFaceObj.transform.SetParent(transform);
                     floorFaceObj.transform.localPosition = new Vector3(x - xSubtractor, 0, z - ZSubtractor);
                     _floorDictionary.Add(floorFace.FloorPosition, floorFace);
+                }
+            }
+
+            foreach (KeyValuePair<Vector3Int, FloorFace> floorFaceEntry in _floorDictionary)
+            {
+                var floorFace = floorFaceEntry.Value;
+                var x = floorFaceEntry.Key.x;
+                var z = floorFaceEntry.Key.z;
+
+                if (_floorDictionary.TryGetValue(new Vector3Int(x - 1, 0, z), out var neighbour1))
+                {
+                    floorFace.Neighbours.Add(neighbour1);
+                }
+                if (_floorDictionary.TryGetValue(new Vector3Int(x + 1, 0, z), out var neighbour2))
+                {
+                    floorFace.Neighbours.Add(neighbour2);
+                }
+                if (_floorDictionary.TryGetValue(new Vector3Int(x, 0, z - 1), out var neighbour3))
+                {
+                    floorFace.Neighbours.Add(neighbour3);
+                }
+                if (_floorDictionary.TryGetValue(new Vector3Int(x, 0, z + 1), out var neighbour4))
+                {
+                    floorFace.Neighbours.Add(neighbour4);
                 }
             }
 

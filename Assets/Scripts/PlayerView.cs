@@ -56,7 +56,7 @@ namespace Assets.Scripts
             
         }
 
-        public void FixedUpdate()
+        public void Update()
         {
             Debug.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * 5, Color.red, 0.1f);
             Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out var raycastHit, 50);
@@ -148,7 +148,6 @@ namespace Assets.Scripts
                     }
                     HighlightedFaces.Add(newFace);
                     HighlightedFaces.Add(face);
-                    Debug.Log($"Found connecting face at {newFace.FloorPosition}");
                     return true;
                 }
             }
@@ -163,7 +162,6 @@ namespace Assets.Scripts
 
         private void OnHighlightedCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
         {
-            Debug.Log($"{args.NewItems} {DateTime.Now}");
             switch (args.Action)
             {
                 case NotifyCollectionChangedAction.Add:
