@@ -4,22 +4,24 @@ namespace Assets.Scripts
 {
     public class Face : MonoBehaviour
     {
-        protected MeshRenderer MeshRenderer;
+        protected Renderer Renderer;
 
         protected bool LookedAt;
 
-        [SerializeField]
-        protected Material LookingAtMat;
-
-        [SerializeField]
-        protected Material NotLookingAtMat;
-
         public bool CanLookAt = true;
 
-        protected virtual void Start()
+        [SerializeField]
+        private Material _lookingAtMat;
+
+        [SerializeField]
+        protected Material _invisibleMat;
+
+        protected virtual void Awake()
         {
-            MeshRenderer = GetComponent<MeshRenderer>();
+            Renderer = GetComponent<Renderer>();
             gameObject.tag = "Face";
+
+            StopLookingAt();
         }
 
         public void StartLookingAt()
@@ -27,14 +29,23 @@ namespace Assets.Scripts
             if (!LookedAt)
             {
                 LookedAt = true;
-                MeshRenderer.material = LookingAtMat;
+
+                var mats = Renderer.materials;
+                mats[mats.Length - 1] = _lookingAtMat;
+                Renderer.materials = mats;
             }
         }
 
         public void StopLookingAt()
         {
             LookedAt = false;
-            MeshRenderer.material = NotLookingAtMat;
+
+            if(Renderer != null)
+            {
+                var mats = Renderer.materials;
+                mats[mats.Length - 1] = _invisibleMat;
+                Renderer.materials = mats;
+            }
         }
     }
 }

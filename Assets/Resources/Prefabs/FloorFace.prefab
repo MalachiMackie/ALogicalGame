@@ -28,8 +28,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 975151154297283196}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.502, z: 0}
-  m_LocalScale: {x: 0.999, y: 0.001, z: 0.999}
+  m_LocalPosition: {x: 0, y: -0.499, z: 0}
+  m_LocalScale: {x: 1, y: 0.001, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -59,7 +59,8 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9a3e9364c15415d4e9d8b99847fd8e1a, type: 2}
+  - {fileID: 2100000, guid: fb1d153b160f55845815dbafd65a71f2, type: 2}
+  - {fileID: 2100000, guid: f7309d6bf5e5121468b4d7d4df930b8b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -104,6 +105,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e303112a293baea40a90d4ad6e84ca58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LookingAtMat: {fileID: 2100000, guid: f7309d6bf5e5121468b4d7d4df930b8b, type: 2}
-  NotLookingAtMat: {fileID: 2100000, guid: 9a3e9364c15415d4e9d8b99847fd8e1a, type: 2}
   CanLookAt: 1
+  _lookingAtMat: {fileID: 2100000, guid: f7309d6bf5e5121468b4d7d4df930b8b, type: 2}
+  _invisibleMat: {fileID: 2100000, guid: fb1d153b160f55845815dbafd65a71f2, type: 2}
+  FloorPosition: {x: 0, y: 0, z: 0}
+  Neighbours: []
+  ConnectedFace: {fileID: 0}

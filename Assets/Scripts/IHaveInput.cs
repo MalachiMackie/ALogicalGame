@@ -1,6 +1,6 @@
 ﻿namespace Assets.Scripts
 {
-    public interface IHaveInput
+    public interface IHaveInput : ICanBePlaced
     {
         LogicFace PrimaryInputFace { get; }
 

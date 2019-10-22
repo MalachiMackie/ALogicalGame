@@ -3,7 +3,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public abstract class LogicOperator : MonoBehaviour, IHaveInput, IHaveOutput, ICanBePlaced
+public abstract class LogicOperator : MonoBehaviour, IHaveInput, IHaveOutput
 {
     private bool _output;
 
@@ -62,11 +62,16 @@ public abstract class LogicOperator : MonoBehaviour, IHaveInput, IHaveOutput, IC
     [SerializeField]
     private Vector3Int _gridPos;
 
-    public Vector3Int GridPos
+    public Vector3Int GridPosition
     {
         get => _gridPos;
         set => _gridPos = value;
     }
+
+    [SerializeField]
+    private GridDirection _direction;
+
+    public GridDirection Direction => _direction;
 
     protected virtual void Start()
     {

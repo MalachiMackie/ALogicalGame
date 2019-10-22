@@ -21,6 +21,11 @@ namespace Assets.Scripts
 
         public void FixedUpdate()
         {
+            if(!GameManager.CanMove)
+            {
+                return;
+            }
+
             transform.Rotate(0, GetRotationInput(), 0);
 
             if (_rigidbody.velocity.magnitude < _player.MaxSpeed)

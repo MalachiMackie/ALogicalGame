@@ -2,10 +2,10 @@
 
 namespace Assets.Scripts
 {
-    public interface ICanBePlaced
+    public interface ICanBePlaced : IHaveGridPosition
     {
-        Vector3Int GridPos { get; set; }
-
         Transform transform { get; }
+
+        GridDirection Direction { get; }
     }
 }

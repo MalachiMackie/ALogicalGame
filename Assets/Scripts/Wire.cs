@@ -1,118 +1,142 @@
 ﻿using Assets.Scripts;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Linq;
 using UnityEngine;
 
 public class Wire : MonoBehaviour
 {
-    public int output;
+    private ObservableCollection<FloorFace> _path = new ObservableCollection<FloorFace>();
 
-    private Renderer _renderer;
+    private ObservableCollection<LogicFace> _connectedOutputLogicFaces = new ObservableCollection<LogicFace>();
 
-    [SerializeField]
-    private LogicOperator _inputOperator;
+    private List<LogicFace> _connectedInputLogicFaces = new List<LogicFace>();
 
-    public IHaveInput InputOperator
+    private bool _wireState;
+
+    private HashSet<IHaveOutput> _trueOutputs = new HashSet<IHaveOutput>();
+
+    public void Init(IEnumerable<FloorFace> path)
     {
-        get => _inputOperator;
-        set
+        if(path.All(x => x.HasWire))
         {
-            //if (_inputOperator != null)
-            //{
-            //    _inputOperator.OutputUpdated -= UpdateOutput;
-            //}
+            Destroy(gameObject);
+            return;
+        }
 
-            //_inputOperator = value;
-            //_inputOperator.OutputUpdated += UpdateOutput;
-            //if (OutputOperator != null)
-            //{
-            //    //Fix this - do better
-            //    if (output == 1)
-            //    {
-            //        _inputOperator.OutputUpdated += OutputOperator.SetInput1;
-            //    }
-            //    else if (output == 2)
-            //    {
-            //        _inputOperator.OutputUpdated += OutputOperator.SetInput2;
-            //    }
+        _path.CollectionChanged += PathChanged;
+        _connectedOutputLogicFaces.CollectionChanged += OnConnectedOutputLogicFacesChanged;
 
-            //}
+
+        foreach (FloorFace face in path)
+        {
+            AddFace(face);
+        }
+
+        foreach (FloorFace face in path)
+        {
+            face.CheckForConnections();
+            face.UpdateNeighbours();
         }
     }
 
-    [SerializeField]
-    private LogicOperator _outputOperator;
-
-    public IHaveInput OutputOperator
+    private void OnConnectedOutputLogicFacesChanged(object sender, NotifyCollectionChangedEventArgs e)
     {
-        get => _outputOperator;
-        set
+        if (e.Action == NotifyCollectionChangedAction.Add)
         {
-            //if (InputOperator != null)
-            //{
-            //    InputOperator.OutputUpdated -= OutputOperator.SetInput1;
-            //    InputOperator.OutputUpdated -= OutputOperator.SetInput2;
-            //}
-
-            //_outputOperator = value;
-            //if (InputOperator != null)
-            //{
-            //    if (output == 1)
-            //    {
-            //        InputOperator.OutputUpdated += OutputOperator.SetInput1;
-            //    }
-            //    else if (output == 2)
-            //    {
-            //        InputOperator.OutputUpdated += OutputOperator.SetInput2;
-            //    }
-            //}
+            var logicFace = e.NewItems[0] as LogicFace;
+            logicFace.HaveOutput.OutputUpdated += HaveOutput_OutputUpdated;
+            if(logicFace.HaveOutput.Output)
+            {
+                HaveOutput_OutputUpdated(logicFace.HaveOutput, true);
+            }
         }
     }
 
-    // Start is called before the first frame update
-    void Start()
+    private void HaveOutput_OutputUpdated(object sender, bool e)
     {
-        _renderer = GetComponent<Renderer>();
-
-        //if (OutputOperator != null && InputOperator != null)
-        //{
-        //    InputOperator.OutputUpdated += UpdateOutput;
-        //    if (output == 1)
-        //    {
-        //        InputOperator.OutputUpdated += OutputOperator.SetInput1;
-        //    }
-        //    else if (output == 2)
-        //    {
-        //        InputOperator.OutputUpdated += OutputOperator.SetInput2;
-        //    }
-            
-        //}
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
-    private void UpdateOutput(object sender, bool output)
-    {
-        if (output)
+        if (e)
         {
-            _renderer.material.color = Constants.LogicGateOnColour;
+            _trueOutputs.Add(sender as IHaveOutput);
         }
-        else
+        else if (_trueOutputs.Contains(sender as IHaveOutput))
         {
-            _renderer.material.color = Constants.LogicGateOffColour;
+            _trueOutputs.Remove(sender as IHaveOutput);
+        }
+
+        bool output = _trueOutputs.Count != 0;
+
+        if (output != _wireState)
+        {
+            _wireState = output;
+            foreach (LogicFace inputLogicFace in _connectedInputLogicFaces)
+            {
+                inputLogicFace.HaveInput.SetInput(_wireState, inputLogicFace);
+            }
         }
     }
 
-    //public static Wire Create(LogicOutput input, LogicOperator logicOperator)
-    //{
-    //    var newObject = Instantiate(_prefab) as GameObject;
-    //    var newWire = newObject.GetComponent<Wire>();
+    private void PathChanged(object sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Add)
+        {
+            if (e.NewItems[0] is LogicFace newLogicFace)
+            {
+                if (newLogicFace.Mode == LogicConnectorMode.Input)
+                {
+                    _connectedInputLogicFaces.Add(newLogicFace);
+                }
+                else
+                {
+                    _connectedOutputLogicFaces.Add(newLogicFace);
+                }
+            }
+        }
+        else if (e.Action == NotifyCollectionChangedAction.Remove)
+        {
+            if (e.OldItems[0] is LogicFace oldLogicFace)
+            {
+                if (oldLogicFace.Mode == LogicConnectorMode.Input)
+                {
+                    _connectedInputLogicFaces.Add(oldLogicFace);
+                }
+                else
+                {
+                    _connectedOutputLogicFaces.Add(oldLogicFace);
+                }
+            }
+        }
+        else if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            _connectedOutputLogicFaces.Clear();
+            _connectedInputLogicFaces.Clear();
+        }
+    }
 
-    //    newWire.InputOperator = input;
-    //    newWire.OutputOperator = logicOperator;
+    private void AddFace(FloorFace face)
+    {
+        face.AddWire(this);
+        if(!_path.Contains(face))
+        {
+            _path.Add(face);
+        }
+        if (face is LogicFace logicFace && logicFace.Mode == LogicConnectorMode.Input && _trueOutputs.Count != 0)
+        {
+            logicFace.HaveInput.SetInput(true, logicFace);
+        }
+    }
 
-    //    return newWire;
-    //}
+    public void AddWire(Wire wire)
+    {
+        if (_path != null)
+        {
+            foreach (FloorFace face in wire._path)
+            {
+                AddFace(face);
+            }
+            Destroy(wire.gameObject);
+        }
+    }
 }

@@ -9,22 +9,34 @@ namespace Assets.Scripts
 
         public bool CameraInverted = true;
 
+        private FloorGrid _floorGrid;
+
+        public static bool CanMove = true;
+
         public void Start()
         {
-            Init();
+            InitLevel();
         }
 
-        private void Init()
+        public void Update()
         {
-            //Do Loading things
+            if(Input.GetKeyDown(KeyCode.Escape))
+            {
+                CanMove = !CanMove;
+            }
+        }
+
+        private void InitLevel()
+        {
             foreach (var needGameManager in FindObjectsOfType<GameObject>().OfType<INeedGameManger>())
             {
                 needGameManager.GameManager = this;
             }
+            _floorGrid = FindObjectOfType<FloorGrid>();
             Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Confined;
-            //Show the level
-            
+            Cursor.lockState = CursorLockMode.Locked;   
         }
+
+        public FloorFace GetFloorFaceAtPosition(int x, int z) => _floorGrid.GetFloorFaceAtPosition(x, z);
     }
 }

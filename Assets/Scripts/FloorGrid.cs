@@ -27,22 +27,22 @@ namespace Assets.Scripts
 
         public void Start()
         {
-            if(_floorParent != null)
+            if (_floorParent != null)
             {
                 var gridX = (int)_floorParent.transform.localScale.x;
                 var gridZ = (int)_floorParent.transform.localScale.z;
-                if(gridX % 2 == 0 || gridZ % 2 == 0) throw new InvalidOperationException("Cannot set parent floor as the scale's are even, they must be odd");
+                if (gridX % 2 == 0 || gridZ % 2 == 0) throw new InvalidOperationException("Cannot set parent floor as the scale's are even, they must be odd");
                 _gridX = gridX;
                 _gridZ = gridZ;
                 Debug.Log($"Floor Parent set, Changing Floor grid X to {_gridZ} and Floor Grid Z to {_gridX}");
             }
 
-            if(_gridX <= 0)
+            if (_gridX <= 0)
             {
                 throw new InvalidOperationException("Floor Grid X must be positive");
             }
 
-            if(_gridZ <= 0)
+            if (_gridZ <= 0)
             {
                 throw new InvalidOperationException("Floor Grid Z must be positive");
             }
@@ -51,26 +51,60 @@ namespace Assets.Scripts
             GridZ = _gridZ;
 
             var xSubtractor = GridX / 2;
-            var ZSubtractor = GridZ / 2;
+            var zSubtractor = GridZ / 2;
 
-            for(int x = 0; x < GridX; x++)
+            var logicFaces = FindObjectsOfType<FloorFace>();
+
+            foreach(FloorFace floorFace in logicFaces)
             {
-                for(int z = 0; z < GridZ; z++)
+                _floorDictionary.Add(floorFace.GridPosition, floorFace);
+            }
+
+            for (int x = 0; x < GridX; x++)
+            {
+                for (int z = 0; z < GridZ; z++)
                 {
-                    var floorFaceObj = Instantiate(_floorFaceTemplate);
-                    var floorFace = floorFaceObj.GetComponent<FloorFace>();
-                    floorFace.FloorPosition = new Vector3Int(x, 0, z);
-                    floorFaceObj.transform.SetParent(transform);
-                    floorFaceObj.transform.localPosition = new Vector3(x - xSubtractor, 0, z - ZSubtractor);
-                    _floorDictionary.Add(floorFace.FloorPosition, floorFace);
+                    if (!_floorDictionary.TryGetValue(new Vector3Int(x, 0, z), out var existingFace))
+                    {
+                        var floorFaceObj = Instantiate(_floorFaceTemplate);
+                        var floorFace = floorFaceObj.GetComponent<FloorFace>();
+                        floorFace.GridPosition = new Vector3Int(x, 0, z);
+                        floorFaceObj.transform.SetParent(transform);
+                        floorFaceObj.transform.localPosition = new Vector3(x - xSubtractor, 0, z - zSubtractor);
+                        _floorDictionary.Add(floorFace.GridPosition, floorFace);
+                    }
+                }
+            }
+
+            foreach (KeyValuePair<Vector3Int, FloorFace> floorFaceEntry in _floorDictionary)
+            {
+                var floorFace = floorFaceEntry.Value;
+                var x = floorFaceEntry.Key.x;
+                var z = floorFaceEntry.Key.z;
+
+                if (_floorDictionary.TryGetValue(new Vector3Int(x - 1, 0, z), out var neighbour1))
+                {
+                    floorFace.Neighbours.Add(neighbour1);
+                }
+                if (_floorDictionary.TryGetValue(new Vector3Int(x + 1, 0, z), out var neighbour2))
+                {
+                    floorFace.Neighbours.Add(neighbour2);
+                }
+                if (_floorDictionary.TryGetValue(new Vector3Int(x, 0, z - 1), out var neighbour3))
+                {
+                    floorFace.Neighbours.Add(neighbour3);
+                }
+                if (_floorDictionary.TryGetValue(new Vector3Int(x, 0, z + 1), out var neighbour4))
+                {
+                    floorFace.Neighbours.Add(neighbour4);
                 }
             }
 
             var gridComponents = FindObjectsOfType<MonoBehaviour>().OfType<ICanBePlaced>();
 
-            foreach(var gridComponent in gridComponents)
+            foreach (var gridComponent in gridComponents)
             {
-                _floorDictionary[new Vector3Int(gridComponent.GridPos.x, 0, gridComponent.GridPos.z)].SetOccupant(gridComponent);
+                _floorDictionary[new Vector3Int(gridComponent.GridPosition.x, 0, gridComponent.GridPosition.z)].SetOccupant(gridComponent);
             }
         }
 
@@ -79,6 +113,12 @@ namespace Assets.Scripts
 
         }
 
-        public static Vector3 GetFloorTransformPos(Vector3 position) => new Vector3(position.x - (GridX / 2), position.y + 0.5f, position.z - (GridZ / 2));
+        public FloorFace GetFloorFaceAtPosition(int x, int z)
+        {
+            _floorDictionary.TryGetValue(new Vector3Int(x, 0, z), out var face);
+            return face;
+        }
+
+        //public static Vector3 GetFloorTransformPos(Vector3 position) => new Vector3(position.x - (GridX / 2), position.y + 0.5f, position.z - (GridZ / 2));
     }
 }
