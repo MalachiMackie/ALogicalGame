@@ -16,7 +16,7 @@ namespace Assets.Scripts
         [SerializeField]
         protected Material _invisibleMat;
 
-        protected virtual void Start()
+        protected virtual void Awake()
         {
             Renderer = GetComponent<Renderer>();
             gameObject.tag = "Face";

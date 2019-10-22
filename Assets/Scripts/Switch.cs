@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class Switch : MonoBehaviour, IHaveOutput, ICanBePlaced
+    public class Switch : MonoBehaviour, IHaveOutput
     {
         [SerializeField]
         private bool SwitchOn;
@@ -42,11 +42,16 @@ namespace Assets.Scripts
         [SerializeField]
         private Vector3Int _gridPos;
 
-        public Vector3Int GridPos
+        public Vector3Int GridPosition
         {
             get => _gridPos;
             set => _gridPos = value;
         }
+
+        [SerializeField]
+        private GridDirection _direction;
+
+        public GridDirection Direction => _direction;
 
         private void SetOutput()
         {

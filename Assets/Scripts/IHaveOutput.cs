@@ -2,7 +2,7 @@
 
 namespace Assets.Scripts
 {
-    public interface IHaveOutput
+    public interface IHaveOutput : ICanBePlaced
     {
         LogicFace OutputFace { get; }
 

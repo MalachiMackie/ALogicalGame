@@ -8,9 +8,9 @@ namespace Assets.Scripts
 {
     public class PlayerView : MonoBehaviour
     {
-        private Face _lookedAtFace;
+        private FloorFace _lookedAtFace;
 
-        private Face LookedAtFace
+        private FloorFace LookedAtFace
         {
             get => _lookedAtFace;
             set
@@ -24,16 +24,16 @@ namespace Assets.Scripts
             }
         }
 
-        private ObservableCollection<Face> _highlightedFaces;
+        private ObservableCollection<FloorFace> _highlightedFaces;
 
-        private ObservableCollection<Face> HighlightedFaces
+        private ObservableCollection<FloorFace> HighlightedFaces
         {
             get => _highlightedFaces;
             set
             {
                 if (value == null && _highlightedFaces != null)
                 {
-                    foreach(Face face in _highlightedFaces)
+                    foreach(FloorFace face in _highlightedFaces)
                     {
                         face.StopLookingAt();
                     }
@@ -64,7 +64,7 @@ namespace Assets.Scripts
             //Try look at object
             if(raycastHit.collider?.gameObject != null && raycastHit.collider?.gameObject.tag == "Face")
             {
-                var lookedAtFace = raycastHit.collider.gameObject.GetComponentInParent<Face>();
+                var lookedAtFace = raycastHit.collider.gameObject.GetComponentInParent<FloorFace>();
                 if (lookedAtFace != LookedAtFace && lookedAtFace.CanLookAt)
                 {
                     if (HighlightedFaces != null)
@@ -98,21 +98,17 @@ namespace Assets.Scripts
 
             if(Input.GetMouseButtonDown(0))
             {
-                if(LookedAtFace is LogicFace)
+                if(LookedAtFace != null)
                 {
-                    HighlightedFaces = new ObservableCollection<Face>();
+                    HighlightedFaces = new ObservableCollection<FloorFace>();
                     HighlightedFaces.Add(LookedAtFace);
                 }
             }
 
             if (Input.GetMouseButtonUp(0))
             {
-                if(HighlightedFaces?[0] is LogicFace firstLogicFace
-                    && LookedAtFace is LogicFace endLogicFace
-                    && firstLogicFace != endLogicFace
-                    && firstLogicFace.Mode != endLogicFace.Mode)
+                if(HighlightedFaces != null)
                 {
-                    //create wire with _highlightedFaces
                     CreateWire(HighlightedFaces);
                 }
 
@@ -120,44 +116,34 @@ namespace Assets.Scripts
             }
         }
 
-        private bool TryHighlightFace(Face face)
+        private bool TryHighlightFace(FloorFace face)
         {
             var lastFace = HighlightedFaces[HighlightedFaces.Count - 1];
-            
-            if(face is FloorFace firstFloorFace && lastFace is FloorFace lastFloorFace)
+            if (!face.IsAdjascentTo(lastFace))
             {
-                var xDif = Math.Abs(firstFloorFace.FloorPosition.x - lastFloorFace.FloorPosition.x);
-                var zDif = Math.Abs(firstFloorFace.FloorPosition.z - lastFloorFace.FloorPosition.z);
-                if (xDif == 1 ^ zDif == 1)
+                var xDif = Math.Abs(face.GridPosition.x - lastFace.GridPosition.x);
+                var zDif = Math.Abs(face.GridPosition.z - lastFace.GridPosition.z);
+                if (xDif != 1 || zDif != 1)
                 {
-                    HighlightedFaces.Add(face);
-                    return true;
+                    return false;
                 }
-                else if(xDif == 1 && zDif == 1)
-                {
-                    var gameManager = GetComponent<Player>().GameManager;
-                    var newFace = gameManager.GetFloorFaceAtPosition(firstFloorFace.FloorPosition.x - Math.Sign(lastFloorFace.FloorPosition.x), firstFloorFace.FloorPosition.z);
-                    if(newFace == null)
-                    {
-                        newFace = gameManager.GetFloorFaceAtPosition(firstFloorFace.FloorPosition.x, firstFloorFace.FloorPosition.z - Math.Sign(lastFloorFace.FloorPosition.z));
-                    }
 
-                    if(newFace == null)
-                    {
-                        return false;
-                    }
-                    HighlightedFaces.Add(newFace);
-                    HighlightedFaces.Add(face);
-                    return true;
+                var gameManager = GetComponent<Player>().GameManager;
+                var newFace = gameManager.GetFloorFaceAtPosition(face.GridPosition.x - Math.Sign(lastFace.GridPosition.x), face.GridPosition.z);
+                if (newFace == null)
+                {
+                    newFace = gameManager.GetFloorFaceAtPosition(face.GridPosition.x, face.GridPosition.z - Math.Sign(lastFace.GridPosition.z));
                 }
-            }
-            else
-            {
-                HighlightedFaces.Add(face);
-                return true;
+                if (newFace == null)
+                {
+                    return false;
+                }
+
+                HighlightedFaces.Add(newFace);
             }
 
-            return false;
+            HighlightedFaces.Add(face);
+            return true;
         }
 
         private void OnHighlightedCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
@@ -177,7 +163,7 @@ namespace Assets.Scripts
             }
         }
 
-        private void CreateWire(IEnumerable<Face> path)
+        private void CreateWire(IEnumerable<FloorFace> path)
         {
             var wireObj = Instantiate(_wireTemplate);
             var wire = wireObj.GetComponent<Wire>();

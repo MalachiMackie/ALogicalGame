@@ -28,7 +28,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 975151154297283196}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.502, z: 0}
+  m_LocalPosition: {x: 0, y: -0.499, z: 0}
   m_LocalScale: {x: 1, y: 0.001, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -110,22 +110,4 @@ MonoBehaviour:
   _invisibleMat: {fileID: 2100000, guid: fb1d153b160f55845815dbafd65a71f2, type: 2}
   FloorPosition: {x: 0, y: 0, z: 0}
   Neighbours: []
-  _crossWireMat: {fileID: 2100000, guid: 7b4e16bd338494c4fa4aeeecfaf87ad8, type: 2}
-  _eastWestWireMat: {fileID: 2100000, guid: 051412f1d08ceab4a8d58495a9b0373c, type: 2}
-  _northSouthWireMat: {fileID: 2100000, guid: 16365311d1f58db41b3400b053b2af65, type: 2}
-  _northEastWireMat: {fileID: 2100000, guid: cc4de84d7225a104d9bb1bd29b35bb6d, type: 2}
-  _northWestWireMat: {fileID: 2100000, guid: 35cbc90f4177fbf4a8fb3aa36cd77715, type: 2}
-  _southEastWireMat: {fileID: 2100000, guid: b627db2a83db04b478f932b0d1381239, type: 2}
-  _southWestWireMat: {fileID: 2100000, guid: 8450ee5216823d344993dbe603749f45, type: 2}
-  _westWireMat: {fileID: 2100000, guid: 00459ce508ee90945a728c4a910c3fda, type: 2}
-  _northWireMat: {fileID: 2100000, guid: 927a4e95afc09404baa98b92718d92aa, type: 2}
-  _eastWireMat: {fileID: 2100000, guid: b43cc943ebb1bb640868fdb3b97c4ff3, type: 2}
-  _southWireMat: {fileID: 2100000, guid: b27b8b361d0c36f4b967ec39c77aa90a, type: 2}
-  _northWestSouthWireMat: {fileID: 2100000, guid: 2459fbc65b924384593229898f7cba39,
-    type: 2}
-  _northEastSouthWireMat: {fileID: 2100000, guid: 42c23da18ecfa014aacc95cc293deca5,
-    type: 2}
-  _eastSouthWestWireMat: {fileID: 2100000, guid: 7ac05e5e9b8a7ea4eb4b3af53b05e4e7,
-    type: 2}
-  _eastNorthWestWireMat: {fileID: 2100000, guid: 176b71b2212249a49a4b57fba0b97318,
-    type: 2}
+  ConnectedFace: {fileID: 0}

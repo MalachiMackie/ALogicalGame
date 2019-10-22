@@ -1,25 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class FloorFace : Face
+    public class FloorFace : Face, IHaveGridPosition
     {
-        public Vector3Int FloorPosition;
+        public Vector3Int GridPosition { get; set; }
 
         private ICanBePlaced Occupant;
 
         public bool HasOccupant => Occupant != null;
 
-        public List<FloorFace> Neighbours;
+        public List<IHaveGridPosition> Neighbours = new List<IHaveGridPosition>();
 
         public bool HasWire { get; private set; }
 
         public LogicFace ConnectedFace;
 
         private Material _wireMaterial;
+
+        public Wire ParentWire;
 
         private Material WireMaterial
         {
@@ -55,9 +56,9 @@ namespace Assets.Scripts
         private Material _eastSouthWestWireMat;
         private Material _eastNorthWestWireMat;
 
-        protected override void Start()
+        protected override void Awake()
         {
-            base.Start();
+            base.Awake();
             _wireMaterial = _invisibleMat;
 
             _crossWireMat = Resources.Load<Material>("Materials/Wires/CrossWireMat");
@@ -86,15 +87,16 @@ namespace Assets.Scripts
             if (Occupant == null)
             {
                 Occupant = proposedOccupant;
-                Occupant.GridPos = FloorPosition;
+                Occupant.GridPosition = GridPosition;
                 Occupant.transform.SetParent(transform);
                 Occupant.transform.localPosition = new Vector3(0, Occupant.transform.localPosition.y, 0);
             }
         }
 
-        public void AddWire()
+        public void AddWire(Wire parentWire)
         {
             HasWire = true;
+            ParentWire = parentWire;
         }
 
         public void RemoveWire()
@@ -105,6 +107,15 @@ namespace Assets.Scripts
         public void CheckForConnections()
         {
             WireMaterial = GetWireMaterial();
+        }
+
+        public void CheckForConnections(FloorFace neighbour)
+        {
+            WireMaterial = GetWireMaterial();
+            if(HasWire && neighbour.ParentWire != ParentWire)
+            {
+                ParentWire.AddWire(neighbour.ParentWire);
+            }
         }
 
         private WireConnection GetConnection(Vector3 diff)
@@ -136,18 +147,17 @@ namespace Assets.Scripts
             }
 
             var connections = new List<WireConnection>(4);
-            foreach(FloorFace neighbour in Neighbours)
+            foreach(IHaveGridPosition neighbour in Neighbours)
             {
-                if (neighbour.HasWire || (neighbour.HasOccupant && ConnectedFace != null && (ConnectedFace.HaveInput == neighbour.Occupant || ConnectedFace.HaveOutput == neighbour.Occupant)))
-                {
-                    var diff = new Vector3();
-                    var xDiff = neighbour.FloorPosition.x - FloorPosition.x;
-                    var zDiff = neighbour.FloorPosition.z - FloorPosition.z;
-                    diff.x = xDiff == 0 ? 0 : Mathf.Sign(xDiff);
-                    diff.z = zDiff == 0 ? 0 : Mathf.Sign(zDiff);
+                if (neighbour is FloorFace neighbourFloor && !neighbourFloor.HasWire) continue;
 
-                    connections.Add(GetConnection(diff));
-                }
+                var diff = new Vector3();
+                var xDiff = neighbour.GridPosition.x - GridPosition.x;
+                var zDiff = neighbour.GridPosition.z - GridPosition.z;
+                diff.x = xDiff == 0 ? 0 : Mathf.Sign(xDiff);
+                diff.z = zDiff == 0 ? 0 : Mathf.Sign(zDiff);
+
+                connections.Add(GetConnection(diff));
             }
 
             switch (connections.Count)
@@ -227,6 +237,22 @@ namespace Assets.Scripts
                         return _crossWireMat;
                     }
             }
+        }
+
+        public void UpdateNeighbours()
+        {
+            foreach(IHaveGridPosition neighbour in Neighbours)
+            {
+                if(neighbour is FloorFace neighbourFloor && neighbourFloor.ParentWire != ParentWire)
+                {
+                    neighbourFloor.CheckForConnections(this);
+                }
+            }
+        }
+
+        public bool IsAdjascentTo(IHaveGridPosition haveGridPosition)
+        {
+            return Neighbours.Contains(haveGridPosition);
         }
     }
 }

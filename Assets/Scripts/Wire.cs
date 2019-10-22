@@ -1,120 +1,142 @@
 ﻿using Assets.Scripts;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using UnityEngine;
 
 public class Wire : MonoBehaviour
 {
-    private LogicFace _firstFace;
+    private ObservableCollection<FloorFace> _path = new ObservableCollection<FloorFace>();
 
-    private LogicFace _lastFace;
+    private ObservableCollection<LogicFace> _connectedOutputLogicFaces = new ObservableCollection<LogicFace>();
 
-    public void Init(IEnumerable<Face> path)
+    private List<LogicFace> _connectedInputLogicFaces = new List<LogicFace>();
+
+    private bool _wireState;
+
+    private HashSet<IHaveOutput> _trueOutputs = new HashSet<IHaveOutput>();
+
+    public void Init(IEnumerable<FloorFace> path)
     {
-
-        if (path.ElementAt(0) is LogicFace firstFace
-            && path.ElementAt(path.Count() - 1) is LogicFace lastFace
-            && firstFace.Mode != lastFace.Mode
-            && firstFace != lastFace)
+        if(path.All(x => x.HasWire))
         {
-            for(int i = 1; i < path.Count() - 1; i++)
+            Destroy(gameObject);
+            return;
+        }
+
+        _path.CollectionChanged += PathChanged;
+        _connectedOutputLogicFaces.CollectionChanged += OnConnectedOutputLogicFacesChanged;
+
+
+        foreach (FloorFace face in path)
+        {
+            AddFace(face);
+        }
+
+        foreach (FloorFace face in path)
+        {
+            face.CheckForConnections();
+            face.UpdateNeighbours();
+        }
+    }
+
+    private void OnConnectedOutputLogicFacesChanged(object sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Add)
+        {
+            var logicFace = e.NewItems[0] as LogicFace;
+            logicFace.HaveOutput.OutputUpdated += HaveOutput_OutputUpdated;
+            if(logicFace.HaveOutput.Output)
             {
-                Face face = path.ElementAt(i);
-                
-                if(face is FloorFace floorFace)
+                HaveOutput_OutputUpdated(logicFace.HaveOutput, true);
+            }
+        }
+    }
+
+    private void HaveOutput_OutputUpdated(object sender, bool e)
+    {
+        if (e)
+        {
+            _trueOutputs.Add(sender as IHaveOutput);
+        }
+        else if (_trueOutputs.Contains(sender as IHaveOutput))
+        {
+            _trueOutputs.Remove(sender as IHaveOutput);
+        }
+
+        bool output = _trueOutputs.Count != 0;
+
+        if (output != _wireState)
+        {
+            _wireState = output;
+            foreach (LogicFace inputLogicFace in _connectedInputLogicFaces)
+            {
+                inputLogicFace.HaveInput.SetInput(_wireState, inputLogicFace);
+            }
+        }
+    }
+
+    private void PathChanged(object sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Add)
+        {
+            if (e.NewItems[0] is LogicFace newLogicFace)
+            {
+                if (newLogicFace.Mode == LogicConnectorMode.Input)
                 {
-                    floorFace.AddWire();
-                    if (i == 1)
-                    {
-                        floorFace.ConnectedFace = firstFace;
-                    }
-                    else if (i == path.Count() - 2)
-                    {
-                        floorFace.ConnectedFace = lastFace;
-                    }
+                    _connectedInputLogicFaces.Add(newLogicFace);
+                }
+                else
+                {
+                    _connectedOutputLogicFaces.Add(newLogicFace);
                 }
             }
-            
-            foreach(Face face in path)
+        }
+        else if (e.Action == NotifyCollectionChangedAction.Remove)
+        {
+            if (e.OldItems[0] is LogicFace oldLogicFace)
             {
-                if(face is FloorFace floorFace)
+                if (oldLogicFace.Mode == LogicConnectorMode.Input)
                 {
-                    floorFace.CheckForConnections();
+                    _connectedInputLogicFaces.Add(oldLogicFace);
+                }
+                else
+                {
+                    _connectedOutputLogicFaces.Add(oldLogicFace);
                 }
             }
+        }
+        else if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            _connectedOutputLogicFaces.Clear();
+            _connectedInputLogicFaces.Clear();
+        }
+    }
 
-            //var wireDiffs = new List<(Vector3 tailDiff, Vector3 headDiff, FloorFace floorFace)>();
+    private void AddFace(FloorFace face)
+    {
+        face.AddWire(this);
+        if(!_path.Contains(face))
+        {
+            _path.Add(face);
+        }
+        if (face is LogicFace logicFace && logicFace.Mode == LogicConnectorMode.Input && _trueOutputs.Count != 0)
+        {
+            logicFace.HaveInput.SetInput(true, logicFace);
+        }
+    }
 
-            //for (int i = 1; i < path.Count() - 1; i++)
-            //{
-            //    FloorFace floorFace = path.ElementAt(i) as FloorFace ?? throw new InvalidOperationException($"Face at position {i} is not a floor face");
-            //    Face tailFace = path.ElementAt(i - 1);
-            //    Face headFace = path.ElementAt(i + 1);
-
-            //    var tailDiff = new Vector3();
-            //    var headDiff = new Vector3();
-
-            //    if (!(tailFace is FloorFace tailFloorFace))
-            //    {
-            //        var xDiff = tailFace.transform.position.x - floorFace.transform.position.x;
-            //        var zDiff = tailFace.transform.position.z - floorFace.transform.position.z;
-
-            //        if (Mathf.Abs(xDiff) > 0.25f)
-            //        {
-            //            tailDiff.x = Mathf.Sign(xDiff);
-            //        }
-
-            //        if(Mathf.Abs(zDiff) > 0.25f)
-            //        {
-            //            tailDiff.z = Mathf.Sign(zDiff);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        var xDiff = tailFloorFace.FloorPosition.x - floorFace.FloorPosition.x;
-            //        var zDiff = tailFloorFace.FloorPosition.z - floorFace.FloorPosition.z;
-            //        tailDiff.x = xDiff == 0 ? 0 : Mathf.Sign(xDiff);
-            //        tailDiff.z = zDiff == 0 ? 0 : Mathf.Sign(zDiff);
-            //    }
-
-            //    if (!(headFace is FloorFace headFloorFace))
-            //    {
-            //        var xDiff = headFace.transform.position.x - floorFace.transform.position.x;
-            //        var zDiff = headFace.transform.position.z - floorFace.transform.position.z;
-
-            //        if (Mathf.Abs(xDiff) > 0.25f)
-            //        {
-            //            headDiff.x = Mathf.Sign(xDiff);
-            //        }
-
-            //        if(Mathf.Abs(zDiff) > 0.25f)
-            //        {
-            //            headDiff.z = Mathf.Sign(zDiff);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        var xDiff = headFloorFace.FloorPosition.x - floorFace.FloorPosition.x;
-            //        var zDiff = headFloorFace.FloorPosition.z - floorFace.FloorPosition.z;
-            //        headDiff.x = xDiff == 0 ? 0 : Mathf.Sign(xDiff);
-            //        headDiff.z = zDiff == 0 ? 0 : Mathf.Sign(zDiff);
-            //    }
-
-            //    wireDiffs.Add((tailDiff, headDiff, floorFace));
-            //}
-
-            _firstFace = firstFace;
-            _lastFace = lastFace;
-
-            firstFace.ConnectTo(lastFace);
-            transform.position = firstFace.transform.position;
-
-            //foreach((Vector3 tailDiff, Vector3 headDiff, FloorFace floorFace) in wireDiffs)
-            //{
-            //    //make delay?
-            //    floorFace.AddWire(tailDiff, headDiff); 
-            //}
+    public void AddWire(Wire wire)
+    {
+        if (_path != null)
+        {
+            foreach (FloorFace face in wire._path)
+            {
+                AddFace(face);
+            }
+            Destroy(wire.gameObject);
         }
     }
 }

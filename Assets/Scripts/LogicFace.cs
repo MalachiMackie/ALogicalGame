@@ -1,9 +1,8 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class LogicFace : Face
+    public class LogicFace : FloorFace
     {
         [SerializeField]
         private LogicConnectorMode _mode;
@@ -23,42 +22,76 @@ namespace Assets.Scripts
 
         public IHaveOutput HaveOutput { get; private set; }
 
-        protected override void Start()
+        protected override void Awake()
         {
-            base.Start();
-            if(Mode == LogicConnectorMode.Input)
+            base.Awake();
+
+            if (Mode == LogicConnectorMode.Input)
             {
                 var inputParent = GetComponentInParent<IHaveInput>();
                 HaveInput = inputParent;
+                Neighbours.Add(HaveInput);
+
+                int positionModifier = 1;
+                if (Position == LogicInputPosition.Second)
+                {
+                    positionModifier = -1;
+                }
+                switch (HaveInput.Direction)
+                {
+                    case GridDirection.North:
+                        {
+                            GridPosition = new Vector3Int(HaveInput.GridPosition.x + positionModifier, 0, HaveInput.GridPosition.z);
+                            break;
+                        }
+                    case GridDirection.East:
+                        {
+                            GridPosition = new Vector3Int(HaveInput.GridPosition.x, 0, HaveInput.GridPosition.z + (-1 * positionModifier));
+                            break;
+                        }
+                    case GridDirection.South:
+                        {
+                            GridPosition = new Vector3Int(HaveInput.GridPosition.x + positionModifier, 0, HaveInput.GridPosition.z);
+                            break;
+                        }
+                    case GridDirection.West:
+                        {
+                            GridPosition = new Vector3Int(HaveInput.GridPosition.x, 0, HaveInput.GridPosition.z + positionModifier);
+                            break;
+                        }
+                }
             }
-            else if(Mode == LogicConnectorMode.Output)
+            else if (Mode == LogicConnectorMode.Output)
             {
                 var outputParent = GetComponentInParent<IHaveOutput>();
                 HaveOutput = outputParent;
-            }
-        }
+                Neighbours.Add(HaveOutput);
 
-        public void ConnectTo(LogicFace otherFace)
-        {
-            if(Mode == otherFace.Mode)
-            {
-                Debug.LogError("Cannot connect two faces of the same type");
-                throw new InvalidOperationException("Cannot connect two faces of the same type");
-            }
-
-            if (Mode == LogicConnectorMode.Input && otherFace.HaveOutput != HaveInput)
-            {
-                otherFace.ConnectTo(this);
-            }
-            else if (Mode == LogicConnectorMode.Output && otherFace.HaveInput != HaveOutput)
-            {
-                HaveOutput.OutputUpdated += (sender, e) =>
+                switch (HaveOutput.Direction)
                 {
-                    otherFace.HaveInput.SetInput(e, otherFace);
-                };
-                otherFace.HaveInput.SetInput(HaveOutput.Output, otherFace);
-                Debug.Log($"connected {HaveOutput.ToString()}'s output to {otherFace.HaveInput.ToString()}'s input");
+                    case GridDirection.North:
+                        {
+                            GridPosition = new Vector3Int(HaveOutput.GridPosition.x, 0, HaveOutput.GridPosition.z + 1);
+                            break;
+                        }
+                    case GridDirection.East:
+                        {
+                            GridPosition = new Vector3Int(HaveOutput.GridPosition.x + 1, 0, HaveOutput.GridPosition.z);
+                            break;
+                        }
+                    case GridDirection.South:
+                        {
+                            GridPosition = new Vector3Int(HaveOutput.GridPosition.x, 0, HaveOutput.GridPosition.z - 1);
+                            break;
+                        }
+                    case GridDirection.West:
+                        {
+                            GridPosition = new Vector3Int(HaveOutput.GridPosition.x - 1, 0, HaveOutput.GridPosition.z);
+                            break;
+                        }
+                }
             }
+            
         }
     }
 }

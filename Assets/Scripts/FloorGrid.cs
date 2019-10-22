@@ -51,18 +51,28 @@ namespace Assets.Scripts
             GridZ = _gridZ;
 
             var xSubtractor = GridX / 2;
-            var ZSubtractor = GridZ / 2;
+            var zSubtractor = GridZ / 2;
+
+            var logicFaces = FindObjectsOfType<FloorFace>();
+
+            foreach(FloorFace floorFace in logicFaces)
+            {
+                _floorDictionary.Add(floorFace.GridPosition, floorFace);
+            }
 
             for (int x = 0; x < GridX; x++)
             {
                 for (int z = 0; z < GridZ; z++)
                 {
-                    var floorFaceObj = Instantiate(_floorFaceTemplate);
-                    var floorFace = floorFaceObj.GetComponent<FloorFace>();
-                    floorFace.FloorPosition = new Vector3Int(x, 0, z);
-                    floorFaceObj.transform.SetParent(transform);
-                    floorFaceObj.transform.localPosition = new Vector3(x - xSubtractor, 0, z - ZSubtractor);
-                    _floorDictionary.Add(floorFace.FloorPosition, floorFace);
+                    if (!_floorDictionary.TryGetValue(new Vector3Int(x, 0, z), out var existingFace))
+                    {
+                        var floorFaceObj = Instantiate(_floorFaceTemplate);
+                        var floorFace = floorFaceObj.GetComponent<FloorFace>();
+                        floorFace.GridPosition = new Vector3Int(x, 0, z);
+                        floorFaceObj.transform.SetParent(transform);
+                        floorFaceObj.transform.localPosition = new Vector3(x - xSubtractor, 0, z - zSubtractor);
+                        _floorDictionary.Add(floorFace.GridPosition, floorFace);
+                    }
                 }
             }
 
@@ -92,9 +102,9 @@ namespace Assets.Scripts
 
             var gridComponents = FindObjectsOfType<MonoBehaviour>().OfType<ICanBePlaced>();
 
-            foreach(var gridComponent in gridComponents)
+            foreach (var gridComponent in gridComponents)
             {
-                _floorDictionary[new Vector3Int(gridComponent.GridPos.x, 0, gridComponent.GridPos.z)].SetOccupant(gridComponent);
+                _floorDictionary[new Vector3Int(gridComponent.GridPosition.x, 0, gridComponent.GridPosition.z)].SetOccupant(gridComponent);
             }
         }
 
