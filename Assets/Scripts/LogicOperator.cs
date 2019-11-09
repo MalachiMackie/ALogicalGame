@@ -73,6 +73,8 @@ public abstract class LogicOperator : MonoBehaviour, IHaveInput, IHaveOutput
 
     public GridDirection Direction => _direction;
 
+    public bool HasOutputHandler => OutputUpdated != null;
+
     protected virtual void Start()
     {
         _renderer = GetComponent<Renderer>();

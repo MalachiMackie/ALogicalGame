@@ -9,5 +9,7 @@ namespace Assets.Scripts
         event EventHandler<bool> OutputUpdated;
 
         bool Output { get; }
+
+        bool HasOutputHandler { get; }
     }
 }
