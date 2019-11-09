@@ -53,6 +53,8 @@ namespace Assets.Scripts
 
         public GridDirection Direction => _direction;
 
+        public bool HasOutputHandler => OutputUpdated != null;
+
         private void SetOutput()
         {
             Output = SwitchOn;

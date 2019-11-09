@@ -1,13 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Linq;
 using UnityEngine;
 
 namespace Assets.Scripts
 {
     public class PlayerView : MonoBehaviour
     {
+        private HighlightMode _highlightMode;
+
         private FloorFace _lookedAtFace;
 
         private FloorFace LookedAtFace
@@ -15,7 +17,7 @@ namespace Assets.Scripts
             get => _lookedAtFace;
             set
             {
-                if(value == null && _lookedAtFace != null)
+                if (value == null && _lookedAtFace != null)
                 {
                     _lookedAtFace.StopLookingAt();
                 }
@@ -31,88 +33,45 @@ namespace Assets.Scripts
             get => _highlightedFaces;
             set
             {
-                if (value == null && _highlightedFaces != null)
+                if (_highlightedFaces != value)
                 {
-                    foreach(FloorFace face in _highlightedFaces)
+                    if (value != null)
                     {
-                        face.StopLookingAt();
-                    }
-                    _highlightedFaces.CollectionChanged -= OnHighlightedCollectionChanged;
-                }
-                else if(value != _highlightedFaces)
-                {
-                    value.CollectionChanged += OnHighlightedCollectionChanged;
-                }
-
-                _highlightedFaces = value;
-            }
-        }
-
-        [SerializeField]
-        private GameObject _wireTemplate;
-
-        public void Start()
-        {
-            
-        }
-
-        public void Update()
-        {
-            Debug.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * 5, Color.red, 0.1f);
-            Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out var raycastHit, 50);
-
-            //Try look at object
-            if(raycastHit.collider?.gameObject != null && raycastHit.collider?.gameObject.tag == "Face")
-            {
-                var lookedAtFace = raycastHit.collider.gameObject.GetComponentInParent<FloorFace>();
-                if (lookedAtFace != LookedAtFace && lookedAtFace.CanLookAt)
-                {
-                    if (HighlightedFaces != null)
-                    {
-                        if (HighlightedFaces.Contains(lookedAtFace))
+                        if (_highlightedFaces != null)
                         {
-                            //Remove all faces after the face we just looked at
-                            for (int i = HighlightedFaces.Count - 1; i > HighlightedFaces.IndexOf(lookedAtFace); i--)
-                            {
-                                HighlightedFaces.RemoveAt(i);
-                            }
+                            _highlightedFaces.CollectionChanged -= OnHighlightedCollectionChanged;
                         }
-                        else if (!TryHighlightFace(lookedAtFace))
-                        {
-                            HighlightedFaces = null;
-                        }
+                        value.CollectionChanged += OnHighlightedCollectionChanged;
                     }
                     else
                     {
-                        LookedAtFace?.StopLookingAt();
+                        foreach (FloorFace face in _highlightedFaces)
+                        {
+                            if(face != LookedAtFace)
+                            {
+                                face.StopLookingAt();
+                            }
+                        }
                     }
-
-                    LookedAtFace = lookedAtFace;
+                    _highlightedFaces = value;
                 }
             }
-            else if(LookedAtFace != null)
-            {
-                LookedAtFace = null;
-                HighlightedFaces = null;
-            }
+        }
 
-            if(Input.GetMouseButtonDown(0))
+        private void OnHighlightedCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
+        {
+            switch (args.Action)
             {
-                if(LookedAtFace != null)
-                {
-                    HighlightedFaces = new ObservableCollection<FloorFace>();
-                    HighlightedFaces.Add(LookedAtFace);
-                }
-            }
-
-            if (Input.GetMouseButtonUp(0))
-            {
-                if(HighlightedFaces != null)
-                {
-                    CreateWire(HighlightedFaces);
-                }
-
-                HighlightedFaces = null;
+                case NotifyCollectionChangedAction.Add:
+                    {
+                        (args.NewItems[0] as Face).StartLookingAt();
+                        break;
+                    }
+                case NotifyCollectionChangedAction.Remove:
+                    {
+                        (args.OldItems[0] as Face).StopLookingAt();
+                        break;
+                    }
             }
         }
 
@@ -146,28 +105,81 @@ namespace Assets.Scripts
             return true;
         }
 
-        private void OnHighlightedCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
+        public void Update()
         {
-            switch (args.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    {
-                        (args.NewItems[0] as Face).StartLookingAt();
-                        break;
-                    }
-                case NotifyCollectionChangedAction.Remove:
-                    {
-                        (args.OldItems[0] as Face).StopLookingAt();
-                        break;
-                    }
-            }
-        }
+            Debug.DrawRay(Camera.main.transform.position, Camera.main.transform.forward * 5, Color.red, 0.1f);
+            Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out RaycastHit raycastHit, 50);
 
-        private void CreateWire(IEnumerable<FloorFace> path)
-        {
-            var wireObj = Instantiate(_wireTemplate);
-            var wire = wireObj.GetComponent<Wire>();
-            wire.Init(path);
+            //Try look at object
+            if (raycastHit.collider?.gameObject != null && raycastHit.collider?.gameObject.tag == "Face")
+            {
+                FloorFace lookedAtFace = raycastHit.collider.gameObject.GetComponentInParent<FloorFace>();
+                if (lookedAtFace != LookedAtFace && lookedAtFace.CanLookAt)
+                {
+                    if (_highlightMode == HighlightMode.None)
+                    {
+                        LookedAtFace?.StopLookingAt();
+                    }
+                    else if (HighlightedFaces != null)
+                    {
+                        if(!TryHighlightFace(lookedAtFace))
+                        {
+                            HighlightedFaces = null;
+                        }
+                    }
+
+                    LookedAtFace = lookedAtFace;
+                }
+            }
+            else if (LookedAtFace != null)
+            {
+                LookedAtFace = null;
+                HighlightedFaces = null;
+            }
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                _highlightMode = HighlightMode.Create;
+                if (LookedAtFace != null)
+                {
+                    HighlightedFaces = new ObservableCollection<FloorFace>()
+                    {
+                        LookedAtFace
+                    };
+                }
+            }
+            if (Input.GetMouseButtonDown(1))
+            {
+                _highlightMode = HighlightMode.Delete;
+                if (LookedAtFace != null)
+                {
+                    HighlightedFaces = new ObservableCollection<FloorFace>()
+                    {
+                        LookedAtFace
+                    };
+                }
+            }
+
+            if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1))
+            {
+                if(HighlightedFaces != null)
+                {
+                    if (_highlightMode == HighlightMode.Create)
+                    {
+                        Wire.CreateWire(HighlightedFaces);
+                    }
+                    else if (_highlightMode == HighlightMode.Delete)
+                    {
+                        var wires = HighlightedFaces.Where(x => x.HasWire).Select(x => x.ParentWire).ToList();
+                        foreach(Wire wire in wires)
+                        {
+                            StartCoroutine(wire.RemoveWire(HighlightedFaces));
+                        }
+                    }
+                }
+                _highlightMode = HighlightMode.None;
+                HighlightedFaces = null;
+            }
         }
     }
 }

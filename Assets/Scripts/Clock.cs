@@ -51,6 +51,8 @@ public class Clock : MonoBehaviour, IHaveOutput
 
     public GridDirection Direction => _direction;
 
+    public bool HasOutputHandler => OutputUpdated != null;
+
     public event EventHandler<bool> OutputUpdated;
 
     public void SetOutput()

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -8,13 +11,13 @@ namespace Assets.Scripts
     {
         public Vector3Int GridPosition { get; set; }
 
-        private ICanBePlaced Occupant;
+        public ICanBePlaced Occupant { get; private set; }
 
         public bool HasOccupant => Occupant != null;
 
         public List<IHaveGridPosition> Neighbours = new List<IHaveGridPosition>();
 
-        public bool HasWire { get; private set; }
+        public bool HasWire => ParentWire != null;
 
         public LogicFace ConnectedFace;
 
@@ -33,8 +36,11 @@ namespace Assets.Scripts
                     mats[0] = value;
                     Renderer.materials = mats;
                 }
+                _wireMaterial = value;
             }
-        } 
+        }
+
+        private Material _noConnectionsWireMat;
 
         private Material _crossWireMat;
 
@@ -60,6 +66,8 @@ namespace Assets.Scripts
         {
             base.Awake();
             _wireMaterial = _invisibleMat;
+
+            _noConnectionsWireMat = Resources.Load<Material>("Materials/Wires/NoConnectionsWireMat");
 
             _crossWireMat = Resources.Load<Material>("Materials/Wires/CrossWireMat");
 
@@ -95,13 +103,21 @@ namespace Assets.Scripts
 
         public void AddWire(Wire parentWire)
         {
-            HasWire = true;
+            if(HasWire)
+            {
+                ParentWire.RemoveFace(this);
+            }
             ParentWire = parentWire;
+            CheckForConnections();
+            UpdateNeighbours();
         }
 
+        //Update
         public void RemoveWire()
         {
-            HasWire = false;
+            ParentWire = null;
+            //UpdateNeighbours();
+            CheckForConnections();
         }
 
         public void CheckForConnections()
@@ -109,14 +125,14 @@ namespace Assets.Scripts
             WireMaterial = GetWireMaterial();
         }
 
-        public void CheckForConnections(FloorFace neighbour)
-        {
-            WireMaterial = GetWireMaterial();
-            if(HasWire && neighbour.ParentWire != ParentWire)
-            {
-                ParentWire.AddWire(neighbour.ParentWire);
-            }
-        }
+        //public void CheckForConnections(FloorFace neighbour)
+        //{
+        //    WireMaterial = GetWireMaterial();
+        //    if(HasWire && neighbour.ParentWire != ParentWire && neighbour.HasWire)
+        //    {
+        //        Task.Run(async () => await ParentWire.AddWire(neighbour.ParentWire));
+        //    }
+        //}
 
         private WireConnection GetConnection(Vector3 diff)
         {
@@ -164,7 +180,7 @@ namespace Assets.Scripts
             {
                 default:
                     {
-                        return _invisibleMat;
+                        return _noConnectionsWireMat;
                     }
                 case 1:
                     {
@@ -243,9 +259,9 @@ namespace Assets.Scripts
         {
             foreach(IHaveGridPosition neighbour in Neighbours)
             {
-                if(neighbour is FloorFace neighbourFloor && neighbourFloor.ParentWire != ParentWire)
+                if(neighbour is FloorFace neighbourFloor)
                 {
-                    neighbourFloor.CheckForConnections(this);
+                    neighbourFloor.CheckForConnections();
                 }
             }
         }
@@ -253,6 +269,25 @@ namespace Assets.Scripts
         public bool IsAdjascentTo(IHaveGridPosition haveGridPosition)
         {
             return Neighbours.Contains(haveGridPosition);
+        }
+
+        public IEnumerable<FloorFace> GetNeighbourWires(FloorFace caller = null)
+        {
+            var neighbourFaces = new List<FloorFace>();
+            if(caller == null)
+            {
+                neighbourFaces.Add(this);
+            }
+            foreach (IHaveGridPosition neighbour in Neighbours)
+            {
+                if(neighbour is FloorFace neighbourFloorFace && neighbourFloorFace.HasWire && neighbourFloorFace != caller)
+                {
+                    neighbourFaces.Add(neighbourFloorFace);
+                    var neighboursFaces = neighbourFloorFace.GetNeighbourWires(this);
+                    neighbourFaces.AddRange(neighboursFaces);
+                }
+            }
+            return neighbourFaces;
         }
     }
 }
